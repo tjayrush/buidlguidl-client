@@ -8,6 +8,7 @@ import { createSystemStatsGauge } from "./monitor_components/systemStatsGauge.js
 import { createPeerCountGauge } from "./monitor_components/peerCountGauge.js";
 import { createCpuLine } from "./monitor_components/cpuLine.js";
 import { createNetworkLine } from "./monitor_components/networkLine.js";
+import { createDiskLine } from "./monitor_components/diskLine.js";
 import { createRethStageGauge } from "./monitor_components/rethStageGauge.js";
 import { createGethStageGauge } from "./monitor_components/gethStageGauge.js";
 import { createChainInfoBox } from "./monitor_components/chainInfoBox.js";
@@ -113,9 +114,7 @@ export async function initializeMonitoring(
       logFilePathExecution,
       components.executionLog,
       screen,
-      components.rethStageGauge,
-      components.gethStageGauge,
-      components.chainInfoBox
+      components.gethStageGauge
     );
 
     if (executionClient == "reth") {
@@ -151,7 +150,8 @@ function setupUI(
 ) {
   const screen = blessed.screen();
   suppressMouseOutput(screen);
-  const grid = new contrib.grid({ rows: 9, cols: 10, screen: screen });
+  // const grid = new contrib.grid({ rows: 9, cols: 10, screen: screen });
+  const grid = new contrib.grid({ rows: 9, cols: 9, screen: screen });
 
   let executionClientLabel;
   let consensusClientLabel;
@@ -168,22 +168,23 @@ function setupUI(
     consensusClientLabel = `Lighthouse v${lighthouseVer}`;
   }
 
-  const executionLog = createExecutionLog(grid, screen, executionClientLabel);
-  const consensusLog = createConsensusLog(grid, screen, consensusClientLabel);
-  const systemStatsGauge = createSystemStatsGauge(grid, screen, installDir);
-  const peerCountGauge = createPeerCountGauge(grid, screen);
+  const executionLog = createExecutionLog(grid, executionClientLabel);
+  const consensusLog = createConsensusLog(grid, consensusClientLabel);
+  const systemStatsGauge = createSystemStatsGauge(grid, installDir);
+  const peerCountGauge = createPeerCountGauge(grid);
   const cpuLine = createCpuLine(grid, screen);
   const networkLine = createNetworkLine(grid, screen);
-  const statusBox = createStatusBox(grid, screen);
-  const bandwidthBox = createBandwidthBox(grid, screen);
-  const chainInfoBox = createChainInfoBox(grid, screen);
+  const diskLine = createDiskLine(grid, screen, installDir);
+  const statusBox = createStatusBox(grid);
+  const bandwidthBox = createBandwidthBox(grid);
+  const chainInfoBox = createChainInfoBox(grid);
 
   let gethStageGauge, rethStageGauge;
 
   if (executionClientGlobal == "geth") {
-    gethStageGauge = createGethStageGauge(grid, screen);
+    gethStageGauge = createGethStageGauge(grid);
   } else if (executionClientGlobal == "reth") {
-    rethStageGauge = createRethStageGauge(grid, screen);
+    rethStageGauge = createRethStageGauge(grid);
   }
 
   const { pic, bigText, ipAddressBox } = createHeader(
@@ -196,6 +197,7 @@ function setupUI(
   screen.append(consensusLog);
   screen.append(cpuLine);
   screen.append(networkLine);
+  screen.append(diskLine);
   screen.append(systemStatsGauge);
   screen.append(peerCountGauge);
   screen.append(statusBox);
@@ -213,7 +215,7 @@ function setupUI(
     try {
       // Run both update functions concurrently
       await Promise.all([
-        updateStatusBox(statusBox, screen),
+        updateStatusBox(statusBox),
         updateChainInfoBox(chainInfoBox, screen),
       ]);
 
@@ -225,8 +227,6 @@ function setupUI(
   }
 
   setInterval(() => updateBandwidthBox(screen), 2000);
-  // setInterval(() => updateStatusBox(statusBox, screen), 5000);
-  // setInterval(() => updateChainInfoBox(chainInfoBox, screen), 5000);
   setInterval(() => updateChainWidgets(statusBox, chainInfoBox, screen), 5000);
 
   function fixBottomMargins(screen) {
@@ -305,6 +305,12 @@ function setupUI(
       if (networkLineGap != 0) {
         networkLine.height = networkLine.height + networkLineGap;
       }
+
+      let diskLineBottom = diskLine.top + diskLine.height - 1;
+      let diskLineGap = screen.height - diskLineBottom - 1;
+      if (diskLineGap != 0) {
+        diskLine.height = diskLine.height + diskLineGap;
+      }
     } catch (error) {
       debugToFile(`fixBottomMargins(): ${error}`, () => {});
     }
@@ -375,28 +381,40 @@ function setupUI(
         systemStatsGauge.width = systemStatsGauge.width + systemStatsGaugeGap;
       }
 
+      let cpuLineRight = cpuLine.left + cpuLine.width - 1;
+      let cpuLineGap = networkLine.left - cpuLineRight - 1;
+      if (cpuLineGap != 0) {
+        cpuLine.width = cpuLine.width + cpuLineGap;
+      }
+
       let networkLineRight = networkLine.left + networkLine.width - 1;
-      let networkLineGap = screen.width - networkLineRight - 1;
+      let networkLineGap = diskLine.left - networkLineRight - 1;
       if (networkLineGap != 0) {
         networkLine.width = networkLine.width + networkLineGap;
       }
 
-      // let networkLineRight = networkLine.left + networkLine.width - 1;
-      // let networkLineGap = screen.width - networkLineRight - 1;
-
-      // if (networkLineGap !== 1) {
-      //   // Adjust the width to ensure the right margin is exactly 1 character
-      //   networkLine.width = networkLine.width + (networkLineGap - 1);
-      // }
+      let diskLineRight = diskLine.left + diskLine.width - 1;
+      let diskLineGap = screen.width - diskLineRight - 1;
+      if (diskLineGap != 0) {
+        diskLine.width = diskLine.width + diskLineGap;
+      }
     } catch (error) {
       debugToFile(`fixRightMargins(): ${error}`, () => {});
     }
   }
 
-  fixBottomMargins(screen);
-  fixRightMargins(screen);
-
   screen.render();
+
+  setTimeout(() => {
+    fixBottomMargins(screen);
+    fixRightMargins(screen);
+
+    cpuLine.emit("attach");
+    networkLine.emit("attach");
+    diskLine.emit("attach");
+
+    screen.render();
+  }, 250);
 
   screen.on("resize", () => {
     fixBottomMargins(screen);
@@ -404,6 +422,7 @@ function setupUI(
 
     cpuLine.emit("attach");
     networkLine.emit("attach");
+    diskLine.emit("attach");
 
     screen.render();
   });

@@ -32,7 +32,7 @@ async function updateCpuLinePlot(cpuLine, screen) {
         title: "", // Use an empty string for the title
         x: cpuDataX,
         y: dataCpuUsage,
-        style: { line: "cyan" }, // Use the first color
+        style: { line: "yellow" },
       },
     ];
 
@@ -53,7 +53,8 @@ async function updateCpuLinePlot(cpuLine, screen) {
 }
 
 export function createCpuLine(grid, screen) {
-  const cpuLine = grid.set(7, 0, 2, 5, contrib.line, {
+  // const cpuLine = grid.set(7, 0, 2, 5, contrib.line, {
+  const cpuLine = grid.set(7, 0, 2, 3, contrib.line, {
     style: { line: "blue", text: "green", baseline: "green" },
     xLabelPadding: 3,
     xPadding: 5,
