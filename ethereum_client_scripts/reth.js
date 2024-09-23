@@ -46,7 +46,8 @@ const execution = pty.spawn(
   `${rethCommand}`,
   [
     "node",
-    "--full",
+    // TODO: Need a way to run --full vs. archive node (no option is archive by default)
+    // "--full",
     "--discovery.port",
     executionPeerPort,
     "--http",
