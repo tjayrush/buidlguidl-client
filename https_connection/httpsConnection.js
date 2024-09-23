@@ -9,6 +9,12 @@ import {
 } from "../getSystemStats.js";
 import { localClient } from "../monitor_components/viemClients.js";
 import { installDir } from "../commandLineOptions.js";
+import {
+  getConsensusPeers,
+  getExecutionPeers,
+} from "../monitor_components/peerCountGauge.js";
+import simpleGit from "simple-git";
+import path from "path";
 
 export let checkIn;
 
@@ -40,18 +46,80 @@ export function initializeHttpConnection(httpConfig) {
   let lastCheckedBlockNumber = -1;
   const minCheckInInterval = 60000; // Minimum 60 seconds between check-ins
 
-  checkIn = async function (force = false) {
+  const git = simpleGit();
+
+  // Run getGitInfo() once and store the result
+  let gitInfo;
+  getGitInfo()
+    .then((info) => {
+      gitInfo = info;
+    })
+    .catch((error) => {
+      debugToFile(`Failed to get initial git info: ${error}`, () => {});
+      gitInfo = { branch: "unknown", lastCommitDate: "unknown" };
+    });
+
+  async function getGitInfo() {
+    try {
+      const branch = await git.revparse(["--abbrev-ref", "HEAD"]);
+      const lastCommit = await git.log(["--format=%cd", "--date=iso", "-1"]);
+      const commitHash = await git.revparse(["HEAD"]); // Add this line to get the commit hash
+
+      let lastCommitDate = "unknown";
+      if (lastCommit && lastCommit.latest && lastCommit.latest.hash) {
+        const commitDateString = lastCommit.latest.hash;
+        try {
+          // Directly create a date from the ISO string
+          const date = new Date(commitDateString);
+
+          if (!isNaN(date)) {
+            lastCommitDate = date
+              .toISOString()
+              .replace(/T/, " ")
+              .replace(/\..+/, "");
+            debugToFile(
+              `Converted lastCommitDate: ${lastCommitDate}`,
+              () => {}
+            );
+          } else {
+            throw new Error("Invalid date");
+          }
+        } catch (error) {
+          debugToFile(`Failed to parse commit date: ${error}`, () => {});
+          debugToFile(`Error stack: ${error.stack}`, () => {});
+        }
+      }
+
+      return {
+        branch: branch.trim(),
+        lastCommitDate: lastCommitDate,
+        commitHash: commitHash.trim(), // Add this line
+      };
+    } catch (error) {
+      debugToFile(`Failed to get git info: ${error}`, () => {});
+      debugToFile(`Error stack: ${error.stack}`, () => {});
+      return {
+        branch: "unknown",
+        lastCommitDate: "unknown",
+        commitHash: "unknown",
+      };
+    }
+  }
+
+  checkIn = async function (force = false, blockNumber = null) {
     const now = Date.now();
     if (!force && now - lastCheckInTime < minCheckInInterval) {
       return;
     }
 
-    let currentBlockNumber;
-    try {
-      currentBlockNumber = await localClient.getBlockNumber();
-    } catch (error) {
-      debugToFile(`Failed to get block number: ${error}`, () => {});
-      return;
+    let currentBlockNumber = blockNumber;
+    if (!currentBlockNumber) {
+      try {
+        currentBlockNumber = await localClient.getBlockNumber();
+      } catch (error) {
+        debugToFile(`Failed to get block number: ${error}`, () => {});
+        return;
+      }
     }
 
     if (!force && currentBlockNumber === lastCheckedBlockNumber) {
@@ -76,14 +144,13 @@ export function initializeHttpConnection(httpConfig) {
       consensusClientResponse += " v" + httpConfig.lighthouseVer;
     }
 
-    let possibleBlockNumber;
+    let possibleBlockNumber = currentBlockNumber;
     let possibleBlockHash;
     try {
-      possibleBlockNumber = await localClient.getBlockNumber();
-      const block = await localClient.getBlock();
+      const block = await localClient.getBlock(possibleBlockNumber);
       possibleBlockHash = block.hash;
     } catch (error) {
-      debugToFile(`Failed to get block number: ${error}`, () => {});
+      debugToFile(`Failed to get block hash: ${error}`, () => {});
     }
 
     try {
@@ -91,7 +158,14 @@ export function initializeHttpConnection(httpConfig) {
       const memoryUsage = await getMemoryUsage();
       const diskUsage = await getDiskUsage(installDir);
       const macAddress = await getMacAddress();
+      const executionPeers = await getExecutionPeers(
+        httpConfig.executionClient
+      );
+      const consensusPeers = await getConsensusPeers(
+        httpConfig.consensusClient
+      );
 
+      // Use the stored gitInfo instead of calling getGitInfo()
       const params = new URLSearchParams({
         id: `${os.hostname()}-${macAddress}-${os.platform()}-${os.arch()}`,
         node_version: `${process.version}`,
@@ -102,6 +176,11 @@ export function initializeHttpConnection(httpConfig) {
         storage_usage: `${diskUsage}`,
         block_number: possibleBlockNumber ? possibleBlockNumber.toString() : "",
         block_hash: possibleBlockHash ? possibleBlockHash : "",
+        execution_peers: executionPeers,
+        consensus_peers: consensusPeers,
+        git_branch: gitInfo.branch,
+        last_commit: gitInfo.lastCommitDate,
+        commit_hash: gitInfo.commitHash,
       });
 
       const options = {
@@ -117,7 +196,8 @@ export function initializeHttpConnection(httpConfig) {
           data += chunk;
         });
         res.on("end", () => {
-          debugToFile(`Checkin response: ${data}`, () => {});
+          // debugToFile(`Checkin response: ${data}`, () => {});
+          debugToFile(`Response status: ${res.statusCode}`, () => {});
         });
       });
 
@@ -139,7 +219,7 @@ export function initializeHttpConnection(httpConfig) {
     {
       onBlock: (block) => {
         if (block.number > 0) {
-          checkIn(true); // Force check-in for each new block
+          checkIn(true, block.number); // Pass block number to checkIn
         }
       },
     },

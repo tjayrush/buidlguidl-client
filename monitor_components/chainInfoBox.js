@@ -4,11 +4,12 @@ import { debugToFile } from "../helpers.js";
 
 let chainInfoBox;
 
-export function createChainInfoBox(grid, screen) {
+export function createChainInfoBox(grid) {
   // const row = screen.height < layoutHeightThresh ? 3 : 6;
   // const rowSpan = screen.height < layoutHeightThresh ? 6 : 3;
 
-  chainInfoBox = grid.set(2, 8, 5, 1, blessed.box, {
+  // chainInfoBox = grid.set(2, 8, 5, 1, blessed.box, {
+  chainInfoBox = grid.set(2, 7, 5, 1, blessed.box, {
     label: "Chain Info",
     stroke: "cyan",
     fill: "white",
@@ -132,7 +133,9 @@ export async function populateChainInfoBox() {
     content += separator + "\n";
 
     for (let i = 0; i < blockNumbers.length; i++) {
-      content += `{center}{bold}{green-fg}${blockNumbers[i]}{/green-fg}{/bold}{/center}\n`;
+      content += `{center}{bold}{green-fg}${blockNumbers[
+        i
+      ].toLocaleString()}{/green-fg}{/bold}{/center}\n`;
       content += `{bold}{blue-fg}ETH $:{/blue-fg}{/bold} ${ethPrices[i]}\n`;
       content += `{bold}{blue-fg}GAS:{/blue-fg}{/bold}   ${gasPrices[i]}\n`;
       content += `{bold}{blue-fg}# TX:{/blue-fg}{/bold}  ${transactionCounts[i]}\n`;

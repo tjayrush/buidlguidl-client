@@ -32,31 +32,6 @@ export function getCpuUsage() {
   });
 }
 
-// export function getDiskUsage(installDir) {
-//   return new Promise((resolve, reject) => {
-//     si.fsSize()
-//       .then((drives) => {
-//         let diskUsagePercent = 0;
-
-//         const osDrive = drives.find((drive) => {
-//           return drive.mount === "/" || drive.mount === "C:/";
-//         });
-
-//         if (osDrive) {
-//           diskUsagePercent = 100 - (osDrive.available / osDrive.size) * 100;
-//         } else {
-//           debugToFile(`getDiskUsage(): OS Drive not found.`, () => {});
-//         }
-
-//         resolve(diskUsagePercent.toFixed(1));
-//       })
-//       .catch((error) => {
-//         debugToFile(`getDiskUsage(): ${error}`, () => {});
-//         reject(error);
-//       });
-//   });
-// }
-
 export function getDiskUsage(installDir) {
   return new Promise((resolve, reject) => {
     si.fsSize()

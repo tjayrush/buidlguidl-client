@@ -115,11 +115,12 @@ export function startBandwidthMonitoring(screen) {
   scheduleNextUpdate();
 }
 
-export function createBandwidthBox(grid, screen) {
+export function createBandwidthBox(grid) {
   // const row = screen.height < layoutHeightThresh ? 3 : 6;
   // const rowSpan = screen.height < layoutHeightThresh ? 2 : 1;
 
-  const box = grid.set(3, 9, 2, 1, blessed.box, {
+  // const box = grid.set(3, 9, 2, 1, blessed.box, {
+  const box = grid.set(3, 8, 2, 1, blessed.box, {
     label: "Bandwidth Usage",
     style: {
       fg: "blue",

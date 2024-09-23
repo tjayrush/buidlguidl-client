@@ -5,47 +5,89 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import { debugToFile } from "../helpers.js";
+import { execSync } from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export function createHeader(grid, screen, messageForHeader) {
   // Function to get the local IP address
-  function getIPAddress() {
-    const interfaces = os.networkInterfaces();
-    for (const iface in interfaces) {
-      for (const alias of interfaces[iface]) {
-        if (alias.family === "IPv4" && !alias.internal) {
-          return alias.address;
+  async function getIPAddress() {
+    while (true) {
+      const interfaces = os.networkInterfaces();
+      for (const iface in interfaces) {
+        for (const alias of interfaces[iface]) {
+          if (alias.family === "IPv4" && !alias.internal) {
+            return alias.address;
+          }
         }
       }
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
-    return "IP not found";
   }
 
   // Function to get the public IP address
   async function getPublicIPAddress() {
-    try {
-      const response = await axios.get("https://api.ipify.org?format=json");
-      return response.data.ip;
-    } catch (error) {
-      debugToFile(`Error fetching public IP address: ${error}`, () => {});
-      return "IP not found";
+    while (true) {
+      try {
+        const response = await axios.get("https://api.ipify.org?format=json");
+        return response.data.ip;
+      } catch (error) {
+        debugToFile(`Error fetching public IP address: ${error}`, () => {});
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+      }
     }
   }
 
-  // const picOptions = {
-  //   file: path.join(__dirname, "pixelBgLogo.png"),
-  //   cols: 12,
-  //   onReady: ready,
-  // };
+  // New function to fetch points
+  async function fetchPoints(publicIP) {
+    try {
+      const response = await axios.get(
+        `https://rpc.buidlguidl.com:48544/yourpoints?ipaddress=${publicIP}`
+      );
+      return response.data.points;
+    } catch (error) {
+      debugToFile(`Error fetching points: ${error}`, () => {});
+      return null;
+    }
+  }
 
-  // function ready() {
-  //   // screen.render();
-  // }
+  // New function to get the current Git branch
+  function getCurrentBranch() {
+    try {
+      return execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
+    } catch (error) {
+      debugToFile(`Error getting current branch: ${error}`, () => {});
+      return "unknown";
+    }
+  }
 
-  // const pic = grid.set(0, 0, 1, 2, contrib.picture, picOptions);
-  // debugToFile(`pic.height: ${pic.height}`, () => {});
+  // Updated function to get the full Git commit hash
+  function getCurrentCommitHash() {
+    try {
+      return execSync("git rev-parse HEAD").toString().trim();
+    } catch (error) {
+      debugToFile(`Error getting current commit hash: ${error}`, () => {});
+      return "unknown";
+    }
+  }
+
+  // Updated function to update bigText with points, branch name, and commit hash
+  async function updatePointsAndBranchDisplay() {
+    const publicIP = await getPublicIPAddress();
+    const points = await fetchPoints(publicIP);
+    const currentBranch = getCurrentBranch();
+    const commitHash = getCurrentCommitHash();
+    if (points !== null) {
+      bigText.setContent(
+        `{center}{bold}B u i d l G u i d l  C l i e n t{/bold}{/center}\n` +
+          `{center}Branch: ${currentBranch} (${commitHash}){/center}\n` +
+          `{center}{green-fg}Unclaimed Points: ${points}{/green-fg}{/center}\n` +
+          `{center}{cyan-fg}${messageForHeader}{/cyan-fg}{/center}`
+      );
+      screen.render();
+    }
+  }
 
   let pic, logo;
   try {
@@ -104,8 +146,8 @@ export function createHeader(grid, screen, messageForHeader) {
   });
 
   // Create the IP address box
-  const ipAddressBox = grid.set(0, 7, 1, 3, blessed.box, {
-    content: `{center}{bold}IP Address: ${getIPAddress()} {/bold}\n{center}{bold}Public IP: Fetching...{/bold}{/center}`,
+  const ipAddressBox = grid.set(0, 7, 1, 2, blessed.box, {
+    content: `{center}{bold}IP Address: Fetching... {/bold}\n{center}{bold}Public IP: Fetching...{/bold}{/center}`,
     tags: true,
     align: "center",
     valign: "middle",
@@ -117,15 +159,21 @@ export function createHeader(grid, screen, messageForHeader) {
     },
   });
 
-  // screen.render();
+  // Fetch and display both IP addresses
+  Promise.all([getIPAddress(), getPublicIPAddress()]).then(
+    ([localIP, publicIP]) => {
+      ipAddressBox.setContent(
+        `{center}{bold}Local IP: ${localIP}{/bold}\n{center}{bold}Public IP: ${publicIP}{/bold}{/center}`
+      );
+      screen.render();
+    }
+  );
 
-  // Fetch and display the public IP address
-  getPublicIPAddress().then((publicIP) => {
-    ipAddressBox.setContent(
-      `{center}{bold}Local IP: ${getIPAddress()}{/bold}\n{center}{bold}Public IP: ${publicIP}{/bold}{/center}`
-    );
-    screen.render();
-  });
+  // Replace updatePointsDisplay with updatePointsAndBranchDisplay
+  updatePointsAndBranchDisplay();
+
+  // Schedule points and branch update every 5 minutes
+  setInterval(updatePointsAndBranchDisplay, 5 * 60 * 1000);
 
   return { pic, bigText, ipAddressBox };
 }
