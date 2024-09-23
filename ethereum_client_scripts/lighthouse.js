@@ -28,6 +28,7 @@ if (argv.consensuscheckpoint) {
 }
 
 const jwtPath = path.join(installDir, "ethereum_clients", "jwt", "jwt.hex");
+debugToFile(`JWT Path: ${jwtPath}`, () => {});
 
 let lighthouseCommand;
 const platform = os.platform();
