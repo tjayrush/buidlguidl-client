@@ -182,6 +182,35 @@ export function installMacLinuxConsensusClient(
   }
 }
 
+export function installMacLinuxIndexingClient(
+  indexingClient,
+  platform,
+  trueBlocksVer
+) {
+  const trueblockDir = path.join(installDir, "ethereum_clients", "trueblocks");
+  const trueblockScript = path.join(trueblockDir, "trueblocks-node");
+  // console.log(trueblockScript);
+  // console.log(trueblockDir);
+
+  if (!fs.existsSync(trueblockScript)) {
+    console.log("\nInstalling trueblocks-node.");
+    if (!fs.existsSync(trueblockDir)) {
+      console.log(`Creating '${trueblockDir}'`);
+      fs.mkdirSync(`${trueblockDir}/database`, { recursive: true });
+      fs.mkdirSync(`${trueblockDir}/logs`, { recursive: true });
+    }
+
+    console.log("Installing the TrueBlocks indexer...");
+    execSync(`go install github.com/TrueBlocks/trueblocks-node/v3@latest`, {stdio: "inherit"});
+
+    console.log("Moving executable...");
+    execSync(`mv ~/go/bin/trueblocks-node "${trueblockDir}"`, {stdio: "inherit"});
+
+  } else {
+    console.log("TrueBlocks is already installed.");
+  }
+}
+
 export function installWindowsExecutionClient(executionClient) {
   if (executionClient === "geth") {
     const gethDir = path.join(installDir, "ethereum_clients", "geth");
@@ -301,6 +330,10 @@ export function installWindowsConsensusClient(consensusClient) {
       console.log("Lighthouse is already installed.");
     }
   }
+}
+
+export function installWindowsIndexingClient(indexingClient) {
+  console.log("Indexing client installation not yet implemented.", indexingClient);
 }
 
 export function downloadRethSnapshot(rethDir, platform) {
