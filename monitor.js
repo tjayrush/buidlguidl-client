@@ -38,10 +38,16 @@ import {
   createConsensusLog,
   updateConsensusClientInfo,
 } from "./monitor_components/consensusLog.js";
+
+import {
+  createIndexingLog,
+} from "./monitor_components/indexingLog.js";
+
 import { createHeader } from "./monitor_components/header.js";
 
 let executionClientGlobal;
 let consensusClientGlobal;
+let indexingClientGlobal;
 
 export async function initializeMonitoring(
   messageForHeader,
@@ -58,6 +64,7 @@ export async function initializeMonitoring(
   try {
     executionClientGlobal = executionClient;
     consensusClientGlobal = consensusClient;
+    indexingClientGlobal = indexingClient;
     let progress;
 
     if (executionClient == "geth") {
@@ -159,6 +166,7 @@ function setupUI(
 
   let executionClientLabel;
   let consensusClientLabel;
+  let indexingClientLabel;
 
   if (executionClientGlobal == "geth") {
     executionClientLabel = `Geth v${gethVer}`;
@@ -172,8 +180,13 @@ function setupUI(
     consensusClientLabel = `Lighthouse v${lighthouseVer}`;
   }
 
+  if (indexingClientGlobal == "trueblocks") {
+    indexingClientLabel = `TrueBlocks v${trueBlocksVer}`;
+  }
+
   const executionLog = createExecutionLog(grid, executionClientLabel);
   const consensusLog = createConsensusLog(grid, consensusClientLabel);
+  const indexingLog = createIndexingLog(grid, indexingClientLabel);
   const systemStatsGauge = createSystemStatsGauge(grid, installDir);
   const peerCountGauge = createPeerCountGauge(grid);
   const cpuLine = createCpuLine(grid, screen);
@@ -447,6 +460,7 @@ function setupUI(
     components: {
       executionLog,
       consensusLog,
+      indexingLog,
       gethStageGauge,
       rethStageGauge,
       chainInfoBox,
