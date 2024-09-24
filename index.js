@@ -397,9 +397,11 @@ initializeMonitoring(
   messageForHeader,
   executionClient,
   consensusClient,
+  indexingClient,
   gethVer,
   rethVer,
   prysmVer,
   lighthouseVer,
+  trueblocksVer,
   runsClient
 );

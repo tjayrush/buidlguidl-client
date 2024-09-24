@@ -47,10 +47,12 @@ export async function initializeMonitoring(
   messageForHeader,
   executionClient,
   consensusClient,
+  indexingClient,
   gethVer,
   rethVer,
   prysmVer,
   lighthouseVer,
+  trueBlocksVer,
   runsClient
 ) {
   try {
@@ -69,6 +71,7 @@ export async function initializeMonitoring(
       rethVer,
       prysmVer,
       lighthouseVer,
+      trueBlocksVer,
       runsClient
     );
 
@@ -146,6 +149,7 @@ function setupUI(
   rethVer,
   prysmVer,
   lighthouseVer,
+  trueBlocksVer,
   runsClient
 ) {
   const screen = blessed.screen();
