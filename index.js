@@ -257,6 +257,11 @@ function startClient(clientName, installDir) {
     if (consensusCheckpoint != null) {
       clientArgs.push("--consensuscheckpoint", consensusCheckpoint);
     }
+  } else if (clientName === "trueblocks") {
+    clientCommand = path.join(
+      __dirname,
+      "ethereum_client_scripts/trueblocks.js"
+    );
   } else {
     clientCommand = path.join(
       installDir,
@@ -282,6 +287,8 @@ function startClient(clientName, installDir) {
     consensusChild = child;
   } else if (clientName === "lighthouse") {
     consensusChild = child;
+  } else if (clientName === "trueblocks") {
+    indexingChild = child;
   }
 
   child.on("exit", (code) => {
@@ -290,6 +297,8 @@ function startClient(clientName, installDir) {
       executionExited = true;
     } else if (clientName === "prysm" || clientName === "lighthouse") {
       consensusExited = true;
+    } else if (clientName === "trueblocks") {
+      indexingExited = true;
     }
   });
 
@@ -360,10 +369,12 @@ createJwtSecret(jwtDir);
 const httpConfig = {
   executionClient: executionClient,
   consensusClient: consensusClient,
+  indexingClient: indexingClient,
   gethVer: gethVer,
   rethVer: rethVer,
   prysmVer: prysmVer,
   lighthouseVer: lighthouseVer,
+  trueblocksVer: trueblocksVer,
 };
 
 if (!isAlreadyRunning()) {
