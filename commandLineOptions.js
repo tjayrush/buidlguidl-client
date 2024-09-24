@@ -7,7 +7,7 @@ import { debugToFile } from "./helpers.js";
 /// Set default command line option values
 let executionClient = "reth";
 let consensusClient = "lighthouse";
-let indexingClient = "";
+let indexingClient = "trueblocks";
 let executionPeerPort = null;
 let consensusPeerPorts = [null, null];
 let consensusCheckpoint = null;
@@ -64,6 +64,14 @@ function showHelp() {
 function isValidPath(p) {
   try {
     return fs.existsSync(p) && fs.statSync(p).isDirectory();
+  } catch (err) {
+    return false;
+  }
+}
+
+export function isValidFile(p) {
+  try {
+    return fs.existsSync(p) && !fs.statSync(p).isDirectory();
   } catch (err) {
     return false;
   }

@@ -72,6 +72,7 @@ import {
   installDir,
   saveOptionsToFile,
   deleteOptionsFile,
+  isValidFile,
 } from "./commandLineOptions.js";
 import { debugToFile } from "./helpers.js";
 
@@ -104,9 +105,9 @@ function createJwtSecret(jwtDir) {
   }
 }
 
-let executionChild;
-let consensusChild;
-let indexingChild;
+let executionChild = null;
+let consensusChild = null;
+let indexingChild = null;
 
 let executionExited = false;
 let consensusExited = false;
@@ -296,6 +297,10 @@ function startClient(clientName, installDir) {
     );
   }
 
+  if (!isValidFile(clientCommand)) {
+    debugToFile(`!isValidFile(${clientCommand})`, () => {});
+  }
+
   clientArgs.push("--directory", installDir);
 
   const child = spawn("node", [clientCommand, ...clientArgs], {
@@ -381,9 +386,11 @@ const platform = os.platform();
 if (["darwin", "linux"].includes(platform)) {
   installMacLinuxExecutionClient(executionClient, platform, gethVer, rethVer);
   installMacLinuxConsensusClient(consensusClient, platform, lighthouseVer);
+  installMacLinuxIndexingClient(indexingClient, platform, trueblocksVer);
 } else if (platform === "win32") {
   installWindowsExecutionClient(executionClient);
   installWindowsConsensusClient(consensusClient);
+  installWindowsIndexingClient(indexingClient);
 }
 
 let messageForHeader = "";
