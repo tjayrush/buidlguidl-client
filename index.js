@@ -146,6 +146,15 @@ function handleExit() {
       }
     };
 
+    // Handle indexing client exit
+    const handleIndexingExit = (code) => {
+      if (!indexingExited) {
+        indexingExited = true;
+        console.log(`🫡 Indexing client exited with code ${code}`);
+        checkExit();
+      }
+    };
+
     // Handle execution client close
     const handleExecutionClose = (code) => {
       if (!executionExited) {
@@ -160,6 +169,15 @@ function handleExit() {
       if (!consensusExited) {
         consensusExited = true;
         console.log(`🫡 Consensus client closed with code ${code}`);
+        checkExit();
+      }
+    };
+
+    // Handle indexing client close
+    const handleIndexingClose = (code) => {
+      if (!indexingExited) {
+        indexingExited = true;
+        console.log(`🫡 Indexing client closed with code ${code}`);
         checkExit();
       }
     };
@@ -191,6 +209,13 @@ function handleExit() {
       console.log("⌛️ Exiting consensus client...");
       setTimeout(() => {
         consensusChild.kill("SIGINT");
+      }, 750);
+    }
+
+    if (indexingChild && !indexingExited) {
+      console.log("⌛️ Exiting indexing client...");
+      setTimeout(() => {
+        indexingChild.kill("SIGINT");
       }, 750);
     }
 
