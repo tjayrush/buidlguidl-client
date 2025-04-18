@@ -28,6 +28,7 @@ if (argv.consensuscheckpoint) {
 }
 
 const jwtPath = path.join(installDir, "ethereum_clients", "jwt", "jwt.hex");
+debugToFile(`JWT Path: ${jwtPath}`, () => {});
 
 let prysmCommand;
 const platform = os.platform();
@@ -84,7 +85,11 @@ const consensus = pty.spawn(
     cols: 80,
     rows: 30,
     cwd: process.env.HOME,
-    env: { ...process.env, INSTALL_DIR: installDir },
+    env: {
+      ...process.env,
+      INSTALL_DIR: installDir,
+      PRYSM_ALLOW_UNVERIFIED_BINARIES: 1,
+    },
   }
 );
 

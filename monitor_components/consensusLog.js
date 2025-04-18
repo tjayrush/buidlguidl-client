@@ -8,7 +8,7 @@ export function createConsensusLog(grid, consensusClientLabel) {
   // const colSpan = screen.height < layoutHeightThresh ? 7 : 9;
 
   // const consensusLog = grid.set(4, 0, 3, 8, blessed.box, {
-  const consensusLog = grid.set(4, 0, 3, 7, blessed.box, {
+  const consensusLog = grid.set(3, 0, 2, 7, blessed.box, {
     label: `${consensusClientLabel}`,
     content: `Loading ${consensusClientLabel} logs`,
     border: {

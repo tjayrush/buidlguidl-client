@@ -131,6 +131,7 @@ export function initializeHttpConnection(httpConfig) {
 
     let executionClientResponse = httpConfig.executionClient;
     let consensusClientResponse = httpConfig.consensusClient;
+    let indexingClientResponse = httpConfig.indexingClient;
 
     if (httpConfig.executionClient === "geth") {
       executionClientResponse += " v" + httpConfig.gethVer;
@@ -142,6 +143,10 @@ export function initializeHttpConnection(httpConfig) {
       consensusClientResponse += " v" + httpConfig.prysmVer;
     } else if (httpConfig.consensusClient === "lighthouse") {
       consensusClientResponse += " v" + httpConfig.lighthouseVer;
+    }
+
+    if (httpConfig.indexingClient === "trueblocks") {
+      indexingClientResponse += " v" + httpConfig.trueblocksVer;
     }
 
     let possibleBlockNumber = currentBlockNumber;
@@ -164,6 +169,9 @@ export function initializeHttpConnection(httpConfig) {
       const consensusPeers = await getConsensusPeers(
         httpConfig.consensusClient
       );
+      // const indexingPeers = await getIndexingPeers(
+      //   httpConfig.indexingClient
+      // );
 
       // Use the stored gitInfo instead of calling getGitInfo()
       const params = new URLSearchParams({
@@ -171,6 +179,7 @@ export function initializeHttpConnection(httpConfig) {
         node_version: `${process.version}`,
         execution_client: executionClientResponse,
         consensus_client: consensusClientResponse,
+        indexing_client: indexingClientResponse,
         cpu_usage: `${cpuUsage.toFixed(1)}`,
         memory_usage: `${memoryUsage}`,
         storage_usage: `${diskUsage}`,
@@ -178,6 +187,7 @@ export function initializeHttpConnection(httpConfig) {
         block_hash: possibleBlockHash ? possibleBlockHash : "",
         execution_peers: executionPeers,
         consensus_peers: consensusPeers,
+        // indexing_peers: indexingPeers,
         git_branch: gitInfo.branch,
         last_commit: gitInfo.lastCommitDate,
         commit_hash: gitInfo.commitHash,

@@ -28,3 +28,8 @@ If you want to use a Geth + Prysm client pair, pass those as --executionclient (
   ```bash
   node index.js --executionclient geth --consensusclient prysm
   ```
+
+If you want to add indexing, pass --indexingclient (-i) "trueblocks" to the command line. Indexing is off by default.
+  ```bash
+  node index.js --indexingclient trueblocks
+  ```

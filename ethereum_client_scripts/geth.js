@@ -21,6 +21,7 @@ if (argv.executionpeerport) {
 }
 
 const jwtPath = path.join(installDir, "ethereum_clients", "jwt", "jwt.hex");
+debugToFile(`JWT Path: ${jwtPath}`, () => {});
 
 let gethCommand;
 const platform = os.platform();

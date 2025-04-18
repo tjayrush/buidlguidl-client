@@ -7,6 +7,7 @@ import { debugToFile } from "./helpers.js";
 /// Set default command line option values
 let executionClient = "reth";
 let consensusClient = "lighthouse";
+let indexingClient = "trueblocks";
 let executionPeerPort = null;
 let consensusPeerPorts = [null, null];
 let consensusCheckpoint = null;
@@ -28,6 +29,10 @@ function showHelp() {
   console.log(
     "                                            Default: lighthouse\n"
   );
+  console.log(
+    "  -i, --indexingclient <client>             Specify the indexing client ('trueblocks')"
+  );
+  console.log("                                            Default: trueblocks\n");
   console.log(
     "  -ep, --executionpeerport <port>           Specify the execution peer port (must be a number)"
   );
@@ -64,11 +69,20 @@ function isValidPath(p) {
   }
 }
 
+export function isValidFile(p) {
+  try {
+    return fs.existsSync(p) && !fs.statSync(p).isDirectory();
+  } catch (err) {
+    return false;
+  }
+}
+
 // Function to save options to a file
 function saveOptionsToFile() {
   const options = {
     executionClient,
     consensusClient,
+    indexingClient,
     executionPeerPort,
     consensusPeerPorts,
     consensusCheckpoint,
@@ -94,6 +108,7 @@ if (fs.existsSync(optionsFilePath)) {
     const options = loadOptionsFromFile();
     executionClient = options.executionClient;
     consensusClient = options.consensusClient;
+    indexingClient = options.indexingClient;
     executionPeerPort = options.executionPeerPort;
     consensusPeerPorts = options.consensusPeerPorts;
     consensusCheckpoint = options.consensusCheckpoint;
@@ -141,6 +156,8 @@ if (!optionsLoaded) {
       "executionclient",
       "c",
       "consensusclient",
+      "i",
+      "indexingclient",
       "executionpeerport",
       "consensuspeerports",
       "consensuscheckpoint",
@@ -150,6 +167,7 @@ if (!optionsLoaded) {
     alias: {
       e: "executionclient",
       c: "consensusclient",
+      i: "indexingclient",
       d: "directory",
       h: "help",
     },
@@ -176,6 +194,16 @@ if (!optionsLoaded) {
     if (consensusClient !== "lighthouse" && consensusClient !== "prysm") {
       console.log(
         "Invalid option for --consensusclient (-c). Use 'lighthouse' or 'prysm'."
+      );
+      process.exit(1);
+    }
+  }
+
+  if (argv.indexingclient) {
+    indexingClient = argv.indexingclient;
+    if (indexingClient !== "trueblocks") {
+      console.log(
+        "Invalid option for --indexingclient (-i). Use 'trueblocks'."
       );
       process.exit(1);
     }
@@ -228,6 +256,7 @@ if (!optionsLoaded) {
 export {
   executionClient,
   consensusClient,
+  indexingClient,
   executionPeerPort,
   consensusPeerPorts,
   consensusCheckpoint,

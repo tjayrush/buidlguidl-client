@@ -21,6 +21,7 @@ if (argv.executionpeerport) {
 }
 
 const jwtPath = path.join(installDir, "ethereum_clients", "jwt", "jwt.hex");
+debugToFile(`JWT Path: ${jwtPath}`, () => {});
 
 let rethCommand;
 
@@ -45,7 +46,8 @@ const execution = pty.spawn(
   `${rethCommand}`,
   [
     "node",
-    "--full",
+    // TODO: Need a way to run --full vs. archive node (no option is archive by default)
+    // "--full",
     "--discovery.port",
     executionPeerPort,
     "--http",
